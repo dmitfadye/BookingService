@@ -1,6 +1,16 @@
 package com.example.booking.model;
 
 import com.example.booking.util.TextUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -10,20 +20,46 @@ import java.util.Objects;
  *
  * <p>Наследники {@link MeetingRoom} и {@link CoworkingDesk} задают тип
  * пространства и его оснащение.</p>
+ *
+ * <p>В лабораторной работе №2 класс является JPA-сущностью с иерархией
+ * SINGLE_TABLE: все пространства хранятся в таблице {@code workspaces},
+ * тип наследника фиксируется дискриминатором {@code workspace_type}.</p>
  */
+@Entity
+@Table(name = "workspaces")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "workspace_type", discriminatorType = DiscriminatorType.STRING)
 public abstract class Workspace implements Identifiable<Long> {
 
-    private final Long id;
-    private final String name;
-    private final String location;
-    private final int capacity;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 255)
+    private String name;
+
+    @Column(nullable = false, length = 255)
+    private String location;
+
+    @Column(nullable = false)
+    private int capacity;
+
+    @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal pricePerHour;
+
+    @Column(nullable = false)
     private boolean active;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected Workspace() {
+    }
 
     /**
      * Создаёт рабочее пространство.
      *
-     * @param id           идентификатор
+     * @param id           идентификатор (для JPA допускается null)
      * @param name         название
      * @param location     расположение
      * @param capacity     вместимость
@@ -32,13 +68,13 @@ public abstract class Workspace implements Identifiable<Long> {
      */
     protected Workspace(Long id, String name, String location, int capacity,
                         BigDecimal pricePerHour, boolean active) {
-        this.id = Objects.requireNonNull(id, "Идентификатор пространства не может быть null");
-        if (id <= 0) {
+        if (id != null && id <= 0) {
             throw new IllegalArgumentException("Идентификатор пространства должен быть положительным");
         }
         if (capacity <= 0) {
             throw new IllegalArgumentException("Вместимость должна быть больше нуля");
         }
+        this.id = id;
         this.name = TextUtils.requireText(name, "name");
         this.location = TextUtils.requireText(location, "location");
         this.capacity = capacity;
@@ -144,7 +180,7 @@ public abstract class Workspace implements Identifiable<Long> {
             return false;
         }
         Workspace workspace = (Workspace) other;
-        return id.equals(workspace.id);
+        return Objects.equals(id, workspace.id);
     }
 
     @Override

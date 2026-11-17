@@ -1,20 +1,32 @@
 package com.example.booking.model;
 
 import com.example.booking.util.TextUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 import java.time.LocalDateTime;
 
 /**
  * Администратор сервиса: управляет пользователями, пространствами и бронированиями.
  */
+@Entity
+@DiscriminatorValue("ADMIN")
 public class AdminUser extends User {
 
-    private final String position;
+    @Column(length = 255)
+    private String position;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected AdminUser() {
+    }
 
     /**
      * Создаёт администратора.
      *
-     * @param id           идентификатор
+     * @param id           идентификатор (для JPA допускается null)
      * @param fullName     ФИО
      * @param email        e-mail
      * @param passwordHash хеш пароля

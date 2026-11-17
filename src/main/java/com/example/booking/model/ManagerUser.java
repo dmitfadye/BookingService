@@ -1,20 +1,32 @@
 package com.example.booking.model;
 
 import com.example.booking.util.TextUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 import java.time.LocalDateTime;
 
 /**
  * Менеджер: управляет рабочими пространствами и подтверждает бронирования.
  */
+@Entity
+@DiscriminatorValue("MANAGER")
 public class ManagerUser extends User {
 
-    private final String department;
+    @Column(length = 255)
+    private String department;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected ManagerUser() {
+    }
 
     /**
      * Создаёт менеджера.
      *
-     * @param id           идентификатор
+     * @param id           идентификатор (для JPA допускается null)
      * @param fullName     ФИО
      * @param email        e-mail
      * @param passwordHash хеш пароля

@@ -1,19 +1,34 @@
 package com.example.booking.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
 import java.math.BigDecimal;
 
 /**
  * Коворкинг-место с монитором и/или местом у окна.
  */
+@Entity
+@DiscriminatorValue("COWORKING_DESK")
 public class CoworkingDesk extends Workspace {
 
-    private final boolean monitorIncluded;
-    private final boolean nearWindow;
+    @Column(nullable = false)
+    private boolean monitorIncluded;
+
+    @Column(nullable = false)
+    private boolean nearWindow;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected CoworkingDesk() {
+    }
 
     /**
      * Создаёт коворкинг-место.
      *
-     * @param id              идентификатор
+     * @param id              идентификатор (для JPA допускается null)
      * @param name            название
      * @param location        расположение
      * @param capacity        вместимость
