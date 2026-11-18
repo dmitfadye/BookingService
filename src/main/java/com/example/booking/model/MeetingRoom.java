@@ -13,10 +13,10 @@ import java.math.BigDecimal;
 @DiscriminatorValue("MEETING_ROOM")
 public class MeetingRoom extends Workspace {
 
-    @Column(nullable = false)
+    @Column
     private boolean projector;
 
-    @Column(nullable = false)
+    @Column
     private boolean videoConference;
 
     /**

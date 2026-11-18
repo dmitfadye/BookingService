@@ -13,10 +13,10 @@ import java.math.BigDecimal;
 @DiscriminatorValue("COWORKING_DESK")
 public class CoworkingDesk extends Workspace {
 
-    @Column(nullable = false)
+    @Column
     private boolean monitorIncluded;
 
-    @Column(nullable = false)
+    @Column
     private boolean nearWindow;
 
     /**
