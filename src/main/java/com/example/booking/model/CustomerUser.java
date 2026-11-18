@@ -1,21 +1,35 @@
 package com.example.booking.model;
 
 import com.example.booking.util.TextUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 import java.time.LocalDateTime;
 
 /**
  * Клиент: создаёт и отменяет собственные бронирования.
  */
+@Entity
+@DiscriminatorValue("CUSTOMER")
 public class CustomerUser extends User {
 
-    private final String phone;
-    private final String company;
+    @Column(length = 50)
+    private String phone;
+
+    @Column(length = 255)
+    private String company;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected CustomerUser() {
+    }
 
     /**
      * Создаёт клиента.
      *
-     * @param id           идентификатор
+     * @param id           идентификатор (для JPA допускается null)
      * @param fullName     ФИО
      * @param email        e-mail
      * @param passwordHash хеш пароля

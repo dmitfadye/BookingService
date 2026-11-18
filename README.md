@@ -2,14 +2,14 @@
 
 Учебный проект по курсу «Разработка клиент-серверных приложений на Java».
 Лабораторная работа № 1 «Базовые типы данных. Создание собственных классов».
+Лабораторная работа № 2 «Взаимодействие с базой данных. Spring JPA. Разработка REST сервиса».
 
 ## Тема проекта
 
 Сервис бронирования рабочих пространств: переговорных комнат и коворкинг-мест.
 Пользователь с ролью клиента создаёт бронирование, менеджер подтверждает его,
-администратор управляет пользователями и пространствами. В следующих
-лабораторных работах сервис будет переведён на PostgreSQL, Spring Data JPA,
-REST API и Spring Security.
+администратор управляет пользователями и пространствами. В лабораторной
+работе № 2 сервис переведён на PostgreSQL, Spring Data JPA и REST API.
 
 ## Что реализовано в лабораторной работе № 1
 
@@ -35,9 +35,14 @@ REST API и Spring Security.
 ## Стек
 
 - Java 17
-- Spring Boot 3.3.5
+- Spring Boot 3.4.4
+- Spring MVC
+- Spring Data JPA
+- PostgreSQL
+- Lombok
+- H2 для тестов
 - Maven
-- JUnit 5, AssertJ
+- JUnit 5, AssertJ, Mockito, MockMvc
 - SLF4J / Logback
 - Checkstyle
 
@@ -58,6 +63,7 @@ REST API и Spring Security.
 
 ```text
 booking-service/
+├── .github/workflows/ci.yaml
 ├── .gitlab-ci.yml
 ├── README.md
 ├── pom.xml
@@ -69,73 +75,36 @@ booking-service/
     │   ├── java/com/example/booking/
     │   │   ├── BookingServiceApplication.java
     │   │   ├── console/
-    │   │   │   ├── ConsolePrinter.java
-    │   │   │   ├── DemoData.java
-    │   │   │   ├── DemoDataSeeder.java
-    │   │   │   └── DemoRunner.java
     │   │   ├── concurrency/
-    │   │   │   ├── BookingProcessor.java
-    │   │   │   ├── NamedThreadFactory.java
-    │   │   │   ├── ParallelBookingProcessor.java
-    │   │   │   ├── ProcessedBooking.java
-    │   │   │   └── ProcessingReport.java
-    │   │   ├── model/
-    │   │   │   ├── AdminUser.java
-    │   │   │   ├── Booking.java
-    │   │   │   ├── BookingSearchFilter.java
-    │   │   │   ├── BookingStatus.java
-    │   │   │   ├── CoworkingDesk.java
-    │   │   │   ├── CustomerUser.java
-    │   │   │   ├── Identifiable.java
-    │   │   │   ├── ManagerUser.java
-    │   │   │   ├── MeetingRoom.java
-    │   │   │   ├── User.java
-    │   │   │   ├── UserRole.java
-    │   │   │   ├── Workspace.java
-    │   │   │   └── WorkspaceType.java
-    │   │   ├── repository/
-    │   │   │   ├── AbstractInMemoryRepository.java
-    │   │   │   ├── BookingRepository.java
-    │   │   │   ├── CrudRepository.java
-    │   │   │   ├── InMemoryBookingRepository.java
-    │   │   │   ├── InMemoryUserRepository.java
-    │   │   │   ├── InMemoryWorkspaceRepository.java
-    │   │   │   ├── UserRepository.java
-    │   │   │   └── WorkspaceRepository.java
-    │   │   ├── service/
-    │   │   │   ├── BookingQueue.java
-    │   │   │   ├── BookingService.java
-    │   │   │   ├── BookingServiceImpl.java
-    │   │   │   ├── ConcurrentBookingQueue.java
-    │   │   │   ├── PasswordHasher.java
-    │   │   │   ├── Sha256PasswordHasher.java
-    │   │   │   ├── UserService.java
-    │   │   │   ├── UserServiceImpl.java
-    │   │   │   ├── WorkspaceService.java
-    │   │   │   └── WorkspaceServiceImpl.java
+    │   │   ├── controller/          # ЛР2: REST-контроллеры и ApiExceptionHandler
+    │   │   ├── dto/                 # ЛР2: запросы и ответы REST API
+    │   │   ├── model/               # JPA-сущности (ЛР1 + аннотации ЛР2)
+    │   │   ├── repository/          # in-memory (ЛР1) + JpaRepository (ЛР2)
+    │   │   ├── service/             # бизнес-логика (ЛР1) + *ApiService (ЛР2)
     │   │   └── util/
-    │   │       └── TextUtils.java
     │   └── resources/
     │       └── application.properties
     └── test/
-        └── java/com/example/booking/
-            ├── TestFixtures.java
-            ├── concurrency/
-            ├── model/
-            ├── repository/
-            ├── service/
-            └── util/
+        ├── java/com/example/booking/
+        └── resources/
+            └── application.properties  # ЛР2: изолированная H2-база для тестов
 ```
 
 ## Назначение пакетов
 
 - `model` — предметная модель: пользователи, роли, пространства, бронирования,
-  статусы и фильтр поиска. Классы не зависят от Spring и легко тестируются.
-- `repository` — контракты хранения и in-memory реализации. Общий CRUD вынесен
-  в `CrudRepository`, общая реализация хранения — в
-  `AbstractInMemoryRepository`.
-- `service` — бизнес-логика. Интерфейсы отделены от реализаций, зависимости
-  передаются через конструкторы.
+  статусы и фильтр поиска. В ЛР2 классы стали JPA-сущностями: `User`
+  и `Workspace` используют иерархию `SINGLE_TABLE` с дискриминаторами
+  `user_type` / `workspace_type`, `Booking` связан с ними через `@ManyToOne`.
+- `repository` — контракты хранения и in-memory реализации (ЛР1), а также
+  Spring Data JPA-репозитории `UserJpaRepository`, `WorkspaceJpaRepository`,
+  `BookingJpaRepository` с derived query-методами (ЛР2).
+- `dto` — DTO-объекты запросов и ответов REST API с валидацией (ЛР2).
+- `service` — бизнес-логика (ЛР1). В ЛР2 добавлены `UserApiService`,
+  `WorkspaceApiService`, `BookingApiService` и их `*Impl` на JPA,
+  а также `ResourceNotFoundException`.
+- `controller` — REST-контроллеры `/api/users`, `/api/workspaces`,
+  `/api/bookings`, `ApiError` и `ApiExceptionHandler` (ЛР2).
 - `concurrency` — многопоточная обработка очереди и отчёт о выполнении.
 - `console` — демонстрационный сценарий и форматированный вывод.
 - `util` — нормализация и проверка строк.
@@ -180,9 +149,81 @@ booking-service/
 Обработка завершена: успешно 6, ошибок 0, потоки [booking-worker-1, booking-worker-2, booking-worker-3]
 ```
 
+## REST API (ЛР2)
+
+### Пользователи (`/api/users`)
+
+- `POST /api/users` — создать пользователя;
+- `PUT /api/users/{id}` — обновить пользователя;
+- `GET /api/users` — получить всех пользователей;
+- `GET /api/users/{id}` — получить пользователя;
+- `GET /api/users?role={role}` — фильтр по роли (`ADMIN`, `MANAGER`, `CUSTOMER`);
+- `GET /api/users?active={active}` — фильтр по активности;
+- `DELETE /api/users/{id}` — удалить пользователя.
+
+### Пространства (`/api/workspaces`)
+
+- `POST /api/workspaces` — создать пространство;
+- `PUT /api/workspaces/{id}` — обновить пространство;
+- `GET /api/workspaces` — получить все пространства;
+- `GET /api/workspaces/{id}` — получить пространство;
+- `GET /api/workspaces?type={type}` — фильтр по типу
+  (`MEETING_ROOM`, `COWORKING_DESK`);
+- `GET /api/workspaces?active={active}` — фильтр по доступности;
+- `DELETE /api/workspaces/{id}` — удалить пространство.
+
+### Бронирования (`/api/bookings`)
+
+- `POST /api/bookings` — создать бронирование;
+- `PUT /api/bookings/{id}` — обновить период бронирования;
+- `GET /api/bookings` — получить все бронирования;
+- `GET /api/bookings/{id}` — получить бронирование;
+- `GET /api/bookings?status={status}` — фильтр по статусу
+  (`PENDING`, `CONFIRMED`, `CANCELLED`, `COMPLETED`);
+- `GET /api/bookings?customerEmail={email}` — фильтр по e-mail клиента;
+- `GET /api/bookings?workspaceType={type}` — фильтр по типу пространства;
+- `GET /api/bookings?date={yyyy-MM-dd}` — фильтр по дате начала;
+- `GET /api/bookings?maxPrice={price}` — фильтр по максимальной стоимости;
+- `POST /api/bookings/{id}/confirm` — подтвердить бронирование;
+- `POST /api/bookings/{id}/cancel` — отменить бронирование;
+- `POST /api/bookings/{id}/complete` — завершить бронирование;
+- `DELETE /api/bookings/{id}` — удалить бронирование.
+
+Ошибки возвращаются в формате `{"timestamp": ..., "message": ...}`:
+`404` — ресурс не найден, `409` — конфликт (дубликат, занятый интервал),
+`400` — ошибка валидации или некорректные аргументы.
+
+## Схема базы данных (ЛР2)
+
+Схема создаётся Hibernate по JPA-аннотациям при запуске приложения
+(`spring.jpa.hibernate.ddl-auto=update`), в PgAdmin таблицы появляются
+автоматически. Тесты используют изолированную H2-базу и не подключаются
+к PostgreSQL.
+
+- `app_users` — все пользователи (`SINGLE_TABLE`, дискриминатор `user_type`:
+  `ADMIN`, `MANAGER`, `CUSTOMER`): `id`, `full_name`, `email` (unique),
+  `password_hash`, `active`, `created_at`, `position`, `department`, `phone`,
+  `company`;
+- `workspaces` — все пространства (`SINGLE_TABLE`, дискриминатор
+  `workspace_type`: `MEETING_ROOM`, `COWORKING_DESK`): `id`, `name`,
+  `location`, `capacity`, `price_per_hour`, `active`, `projector`,
+  `video_conference`, `monitor_included`, `near_window`;
+- `bookings` — бронирования: `id`, `customer_id` (FK → `app_users`),
+  `workspace_id` (FK → `workspaces`), `start_time`, `end_time`,
+  `created_at`, `total_price`, `status`.
+
 ## Запуск
 
-Требования: JDK 17, Maven 3.9+.
+Требования: JDK 17, Maven 3.9+, PostgreSQL.
+
+Перед запуском задайте переменные окружения (либо используйте значения
+по умолчанию для локального PostgreSQL):
+
+```bash
+export DB_URL=jdbc:postgresql://localhost:5432/booking_service
+export DB_USERNAME=postgres
+export DB_PASSWORD=secret
+```
 
 ```bash
 mvn spring-boot:run
@@ -195,9 +236,10 @@ mvn clean package
 java -jar target/booking-service-1.0.0.jar
 ```
 
-Приложение не является веб-сервером: после выполнения демонстрационного
-сценария оно завершает работу. Лог дополнительно пишется в
-`logs/booking-service.log`.
+Приложение стартует как веб-сервер (по умолчанию порт `8080`), лог
+дополнительно пишется в `logs/booking-service.log`. Консольная
+демонстрация ЛР1 отнесена к профилю `demo` и при обычном запуске
+не выполняется.
 
 ## Тесты
 
@@ -211,7 +253,7 @@ mvn test
 mvn verify
 ```
 
-Покрыты:
+ЛР1, обычные unit-тесты без Spring:
 
 - `TextUtils` — нормализация и проверка строк;
 - `User`, `AdminUser`, `ManagerUser`, `CustomerUser` — роли и разрешения;
@@ -223,14 +265,15 @@ mvn verify
 - сервисы пользователей, пространств и бронирований;
 - `ParallelBookingProcessor` — реальная работа в нескольких именованных потоках.
 
+ЛР2, `@SpringBootTest` + Mockito, без обращения к PostgreSQL:
+
+- `BookingServiceApplicationTests` — подъём Spring-контекста с `@MockitoBean`
+  для JPA-репозиториев;
+- `BookingControllerTest` — `MockMvc`-проверка `GET /api/bookings?status=…`
+  с замоканным `BookingApiService`.
+
 ## CI
 
 В корне проекта находится `.gitlab-ci.yml` с pipeline `verify`, который
 запускает `mvn verify` в образе `maven:3-openjdk-17`. Pipeline должен быть
 зелёным до отправки работы на проверку.
-
-## Git и сдача работы
-
-Проект рассчитан на один репозиторий для всех лабораторных работ. Текущая
-работа находится в ветке `lab1`; после проверки и получения Approve её можно
-смержить в `main`. Merge Request не закрывается до проверки преподавателем.

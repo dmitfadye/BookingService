@@ -1,6 +1,16 @@
 package com.example.booking.model;
 
 import com.example.booking.util.TextUtils;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -11,20 +21,46 @@ import java.util.Objects;
  * <p>Общие поля и поведение вынесены в базовый класс, а роль и набор
  * разрешений определяются наследниками: {@link AdminUser},
  * {@link ManagerUser}, {@link CustomerUser}.</p>
+ *
+ * <p>В лабораторной работе №2 класс является JPA-сущностью с иерархией
+ * SINGLE_TABLE: все пользователи хранятся в таблице {@code app_users},
+ * тип наследника фиксируется дискриминатором {@code user_type}.</p>
  */
+@Entity
+@Table(name = "app_users")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
 public abstract class User implements Identifiable<Long> {
 
-    private final Long id;
-    private final String email;
-    private final String passwordHash;
-    private final LocalDateTime createdAt;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 255)
     private String fullName;
+
+    @Column(nullable = false, unique = true, length = 255)
+    private String email;
+
+    @Column(nullable = false, length = 255)
+    private String passwordHash;
+
+    @Column(nullable = false)
     private boolean active;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected User() {
+    }
 
     /**
      * Создаёт пользователя.
      *
-     * @param id           уникальный идентификатор
+     * @param id           уникальный идентификатор (для JPA допускается null)
      * @param fullName     ФИО
      * @param email        e-mail
      * @param passwordHash хеш пароля
@@ -33,10 +69,10 @@ public abstract class User implements Identifiable<Long> {
      */
     protected User(Long id, String fullName, String email, String passwordHash,
                    boolean active, LocalDateTime createdAt) {
-        this.id = Objects.requireNonNull(id, "Идентификатор пользователя не может быть null");
-        if (id <= 0) {
+        if (id != null && id <= 0) {
             throw new IllegalArgumentException("Идентификатор пользователя должен быть положительным");
         }
+        this.id = id;
         this.fullName = TextUtils.normalizePersonName(fullName);
         this.email = TextUtils.normalizeEmail(email);
         this.passwordHash = TextUtils.requireText(passwordHash, "passwordHash");

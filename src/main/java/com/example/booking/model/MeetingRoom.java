@@ -1,19 +1,34 @@
 package com.example.booking.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
 import java.math.BigDecimal;
 
 /**
  * Переговорная комната с проектором и, возможно, системой видеосвязи.
  */
+@Entity
+@DiscriminatorValue("MEETING_ROOM")
 public class MeetingRoom extends Workspace {
 
-    private final boolean projector;
-    private final boolean videoConference;
+    @Column
+    private boolean projector;
+
+    @Column
+    private boolean videoConference;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected MeetingRoom() {
+    }
 
     /**
      * Создаёт переговорную.
      *
-     * @param id              идентификатор
+     * @param id              идентификатор (для JPA допускается null)
      * @param name            название
      * @param location        расположение
      * @param capacity        вместимость

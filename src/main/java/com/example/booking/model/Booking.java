@@ -1,5 +1,17 @@
 package com.example.booking.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -8,22 +20,53 @@ import java.util.Objects;
 
 /**
  * Бронирование рабочего пространства клиентом.
+ *
+ * <p>В лабораторной работе №2 класс является JPA-сущностью: хранится
+ * в таблице {@code bookings}, клиент и пространство связаны через
+ * внешние ключи {@code customer_id} и {@code workspace_id}.</p>
  */
+@Entity
+@Table(name = "bookings")
 public class Booking implements Identifiable<Long> {
 
-    private final Long id;
-    private final User customer;
-    private final Workspace workspace;
-    private final LocalDateTime start;
-    private final LocalDateTime end;
-    private final LocalDateTime createdAt;
-    private final BigDecimal totalPrice;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "customer_id", nullable = false)
+    private User customer;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "workspace_id", nullable = false)
+    private Workspace workspace;
+
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime start;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime end;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private BookingStatus status;
+
+    /**
+     * Конструктор для JPA. Не использовать в прикладном коде.
+     */
+    protected Booking() {
+    }
 
     /**
      * Создаёт новое бронирование в статусе {@link BookingStatus#PENDING}.
      *
-     * @param id        идентификатор
+     * @param id        идентификатор (для JPA допускается null)
      * @param customer  пользователь, создающий бронирование
      * @param workspace рабочее пространство
      * @param start     начало
@@ -32,10 +75,10 @@ public class Booking implements Identifiable<Long> {
      */
     public Booking(Long id, User customer, Workspace workspace,
                    LocalDateTime start, LocalDateTime end, LocalDateTime createdAt) {
-        this.id = Objects.requireNonNull(id, "Идентификатор бронирования не может быть null");
-        if (id <= 0) {
+        if (id != null && id <= 0) {
             throw new IllegalArgumentException("Идентификатор бронирования должен быть положительным");
         }
+        this.id = id;
         this.customer = Objects.requireNonNull(customer, "Клиент не может быть null");
         this.workspace = Objects.requireNonNull(workspace, "Пространство не может быть null");
         validatePeriod(start, end);
@@ -77,6 +120,19 @@ public class Booking implements Identifiable<Long> {
 
     public BookingStatus getStatus() {
         return status;
+    }
+
+    /**
+     * Обновляет период бронирования с пересчётом стоимости.
+     *
+     * @param newStart новое начало
+     * @param newEnd   новое окончание
+     */
+    public void reschedule(LocalDateTime newStart, LocalDateTime newEnd) {
+        validatePeriod(newStart, newEnd);
+        this.start = newStart;
+        this.end = newEnd;
+        this.totalPrice = calculateTotalPrice(newStart, newEnd, workspace.getPricePerHour());
     }
 
     /**
@@ -173,7 +229,7 @@ public class Booking implements Identifiable<Long> {
             return false;
         }
         Booking booking = (Booking) other;
-        return id.equals(booking.id);
+        return Objects.equals(id, booking.id);
     }
 
     @Override

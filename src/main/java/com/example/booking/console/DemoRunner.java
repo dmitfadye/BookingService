@@ -19,7 +19,7 @@ import java.util.List;
  * Демонстрационный сценарий работы приложения для лабораторной работы №1.
  */
 @Component
-@Profile("!test")
+@Profile("demo")
 public class DemoRunner implements CommandLineRunner {
 
     private final DemoDataSeeder dataSeeder;
